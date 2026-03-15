@@ -1,6 +1,9 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"github.com/3113y/blog/internal/util"
+	"gorm.io/gorm"
+)
 
 // User 博主/用户模型
 type User struct {
@@ -8,6 +11,19 @@ type User struct {
 	Username string `gorm:"uniqueIndex;not null" json:"username"`
 	Password string `gorm:"not null" json:"-"` // json:"-" 表示不返回密码
 	Email    string `json:"email"`
+}
+
+// BeforeSave 在保存前自动加密密码 (GORM 钩子)
+func (u *User) BeforeSave(tx *gorm.DB) error {
+	// 如果密码字段有新值，则进行加密
+	if tx.Statement.Changed("Password") {
+		hashedPassword, err := util.HashPassword(u.Password)
+		if err != nil {
+			return err
+		}
+		tx.Statement.SetColumn("Password", hashedPassword)
+	}
+	return nil
 }
 
 // Post 文章模型

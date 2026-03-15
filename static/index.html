@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人博客</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a href="#" class="logo">📝 我的博客</a>
+                </div>
+                <div class="navbar-menu" id="navbar-menu">
+                    <a href="#" onclick="goToHome()" class="nav-link">首页</a>
+                    <a href="#" onclick="toggleAuthMenu()" class="nav-link" id="auth-menu-btn">登录/注册</a>
+                    <a href="#" onclick="logout()" class="nav-link" id="logout-btn" style="display:none;">登出</a>
+                    <a href="#" onclick="goToCreate()" class="nav-link" id="create-link" style="display:none;">发布文章</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主容器 -->
+        <div class="container">
+            <!-- Auth Menu Dropdown -->
+            <div id="auth-dropdown" class="auth-dropdown" style="display:none;">
+                <button class="auth-btn" onclick="showRegister()">注册</button>
+                <button class="auth-btn" onclick="showLogin()">登录</button>
+            </div>
+
+            <!-- 认证页面 -->
+            <div id="auth-page" class="page" style="display:block;">
+                <!-- 登录表单 -->
+                <div id="login-form" class="auth-form" style="display:none;">
+                    <h2>登录</h2>
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label for="login-username">用户名</label>
+                            <input type="text" id="login-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">密码</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">登录</button>
+                        <button type="button" class="btn btn-secondary" onclick="showRegister()">切换到注册</button>
+                    </form>
+                    <div id="login-message" class="message"></div>
+                </div>
+
+                <!-- 注册表单 -->
+                <div id="register-form" class="auth-form" style="display:block;">
+                    <h2>注册</h2>
+                    <form onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label for="register-username">用户名</label>
+                            <input type="text" id="register-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-email">邮箱</label>
+                            <input type="email" id="register-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">密码</label>
+                            <input type="password" id="register-password" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-primary">注册</button>
+                        <button type="button" class="btn btn-secondary" onclick="showLogin()">切换到登录</button>
+                    </form>
+                    <div id="register-message" class="message"></div>
+                </div>
+            </div>
+
+            <!-- 首页 -->
+            <div id="home-page" class="page" style="display:none;">
+                <h1>文章列表</h1>
+                <div id="posts-container" class="posts-container">
+                    <!-- 文章卡片会动态插入这里 -->
+                </div>
+                <div id="loading" class="loading">加载中...</div>
+            </div>
+
+            <!-- 创建文章页面 -->
+            <div id="create-page" class="page" style="display:none;">
+                <h1>发布新文章</h1>
+                <form onsubmit="handleCreatePost(event)" class="create-form">
+                    <div class="form-group">
+                        <label for="post-title">标题</label>
+                        <input type="text" id="post-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="post-content">内容</label>
+                        <textarea id="post-content" rows="10" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">发布</button>
+                    <button type="button" class="btn btn-secondary" onclick="goToHome()">返回</button>
+                </form>
+                <div id="create-message" class="message"></div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>&copy; 2026 我的博客. 由 Go + Gin + PostgreSQL 驱动</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,1 +1,6 @@
 main
+dist/
+build/
+.env
+*.log
+*.tmp
