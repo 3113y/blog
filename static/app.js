@@ -31,17 +31,19 @@ function clearUserFromStorage() {
 
 // 认证状态管理
 function checkAuthStatus() {
-    if (currentUser) {
-        goToHome();
-    } else {
-        showAuthPage();
-    }
+    // 默认显示首页，不需要登录也可以浏览
+    goToHome();
 }
 
 function updateUIAfterAuth() {
     document.getElementById('auth-menu-btn').style.display = 'none';
     document.getElementById('logout-btn').style.display = 'inline-block';
-    document.getElementById('create-link').style.display = 'inline-block';
+    // 只有ID为1的用户（作者）才能看到发布文章的链接
+    if (currentUser && currentUser.id === 1) {
+        document.getElementById('create-link').style.display = 'inline-block';
+    } else {
+        document.getElementById('create-link').style.display = 'none';
+    }
 }
 
 function updateUIBeforeAuth() {
@@ -78,10 +80,7 @@ function showAuthPage() {
 
 // 页面导航
 function goToHome() {
-    if (!currentUser) {
-        showAuthPage();
-        return;
-    }
+    // 改为允许未登录用户查看博客列表
     hideAllPages();
     document.getElementById('home-page').style.display = 'block';
     loadPosts();
@@ -207,11 +206,60 @@ function createPostCard(post) {
     card.className = 'post-card';
 
     const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
+    
+    // 使用 marked 将 markdown 转换为 HTML
+    let contentHtml;
+    try {
+        contentHtml = marked.parse(post.content);
+    } catch (error) {
+        contentHtml = `<p>${escapeHtml(post.content)}</p>`;
+    }
+
+    // 创建评论HTML
+    let commentsHtml = `
+        <div class="comments-section">
+            <h4>评论 (${post.comments?.length || 0})</h4>
+            <div class="comments-list">
+    `;
+    
+    if (post.comments && post.comments.length > 0) {
+        post.comments.forEach(comment => {
+            const commentDate = new Date(comment.created_at).toLocaleDateString('zh-CN');
+            commentsHtml += `
+                <div class="comment-item">
+                    <div class="comment-meta">
+                        <strong>${escapeHtml(comment.author?.username || '匿名')}</strong>
+                        <span class="comment-date">📅 ${commentDate}</span>
+                    </div>
+                    <div class="comment-content">${escapeHtml(comment.content)}</div>
+                </div>
+            `;
+        });
+    } else {
+        commentsHtml += '<p style="text-align: center; color: #999;">还没有评论</p>';
+    }
+    
+    commentsHtml += `</div>`;
+    
+    // 只有登陆用户才能评论
+    if (currentUser) {
+        commentsHtml += `
+            <div class="comment-form">
+                <textarea id="comment-${post.id}" class="comment-input" placeholder="发表评论..." rows="3"></textarea>
+                <button class="btn btn-primary btn-small" onclick="submitComment(${post.id})">发表评论</button>
+            </div>
+        `;
+    } else {
+        commentsHtml += `<p style="text-align: center; color: #999;">登录后可发表评论</p>`;
+    }
+    
+    commentsHtml += `</div>`;
 
     card.innerHTML = `
         <h3>${escapeHtml(post.title)}</h3>
         <div class="post-meta">📅 ${createdAt} | 👤 ${escapeHtml(post.author?.username || '匿名')}</div>
-        <div class="post-content">${escapeHtml(post.content)}</div>
+        <div class="post-content">${contentHtml}</div>
+        ${commentsHtml}
     `;
 
     return card;
@@ -223,6 +271,45 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// 提交评论
+async function submitComment(postId) {
+    const textarea = document.getElementById(`comment-${postId}`);
+    const content = textarea.value.trim();
+
+    if (!content) {
+        alert('评论不能为空');
+        return;
+    }
+
+    if (!currentUser) {
+        alert('请先登录');
+        return;
+    }
+
+    try {
+        const response = await fetch('/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content,
+                user_id: currentUser.id,
+                post_id: postId
+            })
+        });
+
+        if (response.ok) {
+            textarea.value = '';
+            alert('评论发表成功！');
+            loadPosts(); // 重新加载文章列表以显示新评论
+        } else {
+            const data = await response.json();
+            alert(data.error || '评论发表失败');
+        }
+    } catch (error) {
+        alert('网络错误：' + error.message);
+    }
 }
 
 // 创建文章处理

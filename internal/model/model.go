@@ -29,8 +29,18 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 // Post 文章模型
 type Post struct {
 	gorm.Model
-	Title   string `gorm:"not null" json:"title"`
-	Content string `gorm:"type:text" json:"content"`
+	Title    string    `gorm:"not null" json:"title"`
+	Content  string    `gorm:"type:text" json:"content"`
+	UserID   uint      `json:"user_id"`
+	User     User      `json:"author,omitempty"`
+	Comments []Comment `json:"comments,omitempty"`
+}
+
+// Comment 评论模型
+type Comment struct {
+	gorm.Model
+	Content string `gorm:"type:text;not null" json:"content"`
 	UserID  uint   `json:"user_id"`
 	User    User   `json:"author,omitempty"`
+	PostID  uint   `json:"post_id"`
 }

@@ -31,5 +31,5 @@ func InitDB() {
 
 	// 自动迁移 (生产环境建议用 golang-migrate，这里为了演示先用 AutoMigrate)
 	log.Println("Auto migrating database schema...")
-	DB.AutoMigrate(&model.User{}, &model.Post{})
+	DB.AutoMigrate(&model.User{}, &model.Post{}, &model.Comment{})
 }

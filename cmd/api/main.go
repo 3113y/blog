@@ -34,6 +34,9 @@ func main() {
 	r.GET("/posts", handler.GetPosts)
 	r.POST("/posts", handler.CreatePost)
 
+	// 评论相关路由
+	r.POST("/comments", handler.CreateComment)
+
 	// 5. 启动
 	log.Println("Server starting on :8080...")
 	if err := r.Run(":8080"); err != nil {

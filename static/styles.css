@@ -221,6 +221,78 @@ body {
     text-overflow: ellipsis;
 }
 
+/* 评论区域 */
+.comments-section {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.comments-section h4 {
+    color: #333;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.comments-list {
+    margin-bottom: 1rem;
+}
+
+.comment-item {
+    background: #f9f9f9;
+    padding: 0.8rem;
+    border-radius: 4px;
+    margin-bottom: 0.8rem;
+}
+
+.comment-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.comment-meta strong {
+    color: #333;
+}
+
+.comment-date {
+    color: #999;
+    font-size: 0.85rem;
+}
+
+.comment-content {
+    color: #666;
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.comment-form {
+    margin-top: 1rem;
+}
+
+.comment-input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
 /* 创建文章表单 */
 .create-form {
     background: white;

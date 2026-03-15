@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人博客</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
     <div id="app">
@@ -12,7 +12,7 @@
         <nav class="navbar">
             <div class="container">
                 <div class="navbar-brand">
-                    <a href="#" class="logo">📝 我的博客</a>
+                    <a href="#" class="logo">3113y的博客</a>
                 </div>
                 <div class="navbar-menu" id="navbar-menu">
                     <a href="#" onclick="goToHome()" class="nav-link">首页</a>
@@ -32,7 +32,7 @@
             </div>
 
             <!-- 认证页面 -->
-            <div id="auth-page" class="page" style="display:block;">
+            <div id="auth-page" class="page" style="display:none;">
                 <!-- 登录表单 -->
                 <div id="login-form" class="auth-form" style="display:none;">
                     <h2>登录</h2>
@@ -75,7 +75,7 @@
             </div>
 
             <!-- 首页 -->
-            <div id="home-page" class="page" style="display:none;">
+            <div id="home-page" class="page" style="display:block;">
                 <h1>文章列表</h1>
                 <div id="posts-container" class="posts-container">
                     <!-- 文章卡片会动态插入这里 -->
@@ -108,6 +108,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="./app.js"></script>
 </body>
 </html>
