@@ -20,6 +20,5 @@ RUN chmod +x api
 # 暴露端口
 EXPOSE 8080
 
-# 运行
+# 运行应用
 CMD ["./api"]
-CMD ["./main"]
