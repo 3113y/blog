@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/3113y/blog/internal/model"
 	"github.com/3113y/blog/internal/repository"
@@ -53,10 +55,21 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	req.Username = strings.TrimSpace(req.Username)
+	req.Email = strings.TrimSpace(req.Email)
+	req.Password = strings.TrimSpace(req.Password)
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username, email and password are required"})
+		return
+	}
+
 	// 检查用户是否已存在
 	var existingUser model.User
-	if result := repository.DB.Where("username = ?", req.Username).First(&existingUser); result.Error == nil {
+	if result := repository.DB.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser); result.Error == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "username already exists"})
+		return
+	} else if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "database query failed"})
 		return
 	}
 
@@ -68,6 +81,10 @@ func Register(c *gin.Context) {
 	}
 
 	if result := repository.DB.Create(&user); result.Error != nil {
+		if strings.Contains(strings.ToLower(result.Error.Error()), "duplicate key") {
+			c.JSON(http.StatusConflict, gin.H{"error": "username or email already exists"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -87,9 +104,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	req.Username = strings.TrimSpace(req.Username)
+	req.Password = strings.TrimSpace(req.Password)
+	if req.Username == "" || req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
+		return
+	}
+
 	// 根据用户名查找用户
 	var user model.User
-	if result := repository.DB.Where("username = ?", req.Username).First(&user); result.Error != nil {
+	if result := repository.DB.Where("username = ? OR email = ?", req.Username, req.Username).First(&user); result.Error != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 		return
 	}
@@ -162,6 +186,11 @@ func CreateComment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	req.Content = strings.TrimSpace(req.Content)
+	if req.Content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "comment content is required"})
+		return
+	}
 
 	// 验证用户是否存在
 	var user model.User
@@ -190,6 +219,9 @@ func CreateComment(c *gin.Context) {
 	}
 
 	// 返回包含用户信息的评论
-	repository.DB.Preload("User").First(&comment)
+	if result := repository.DB.Preload("User").First(&comment, comment.ID); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "comment created but failed to load author info"})
+		return
+	}
 	c.JSON(http.StatusCreated, comment)
 }

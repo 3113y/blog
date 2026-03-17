@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/3113y/blog/internal/util"
 	"gorm.io/gorm"
 )
@@ -41,6 +43,29 @@ type Comment struct {
 	gorm.Model
 	Content string `gorm:"type:text;not null" json:"content"`
 	UserID  uint   `json:"user_id"`
-	User    User   `json:"author,omitempty"`
+	Email   string `gorm:"uniqueIndex;not null" json:"email"`
 	PostID  uint   `json:"post_id"`
+}
+
+func (u *User) hashPasswordIfNeeded() error {
+	if strings.HasPrefix(u.Password, "$2a$") || strings.HasPrefix(u.Password, "$2b$") || strings.HasPrefix(u.Password, "$2y$") {
+		return nil
+	}
+
+	hashedPassword, err := util.HashPassword(u.Password)
+	if err != nil {
+		return err
+	}
+	u.Password = hashedPassword
+	return nil
+}
+
+// BeforeCreate 在创建前自动加密密码 (GORM 钩子)
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	return u.hashPasswordIfNeeded()
+}
+
+// BeforeUpdate 在更新前自动加密密码 (GORM 钩子)
+func (u *User) BeforeUpdate(tx *gorm.DB) error {
+	return u.hashPasswordIfNeeded()
 }

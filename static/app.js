@@ -206,14 +206,7 @@ function createPostCard(post) {
     card.className = 'post-card';
 
     const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
-    
-    // 使用 marked 将 markdown 转换为 HTML
-    let contentHtml;
-    try {
-        contentHtml = marked.parse(post.content);
-    } catch (error) {
-        contentHtml = `<p>${escapeHtml(post.content)}</p>`;
-    }
+    const contentHtml = renderMarkdown(post.content);
 
     // 创建评论HTML
     let commentsHtml = `
@@ -231,7 +224,7 @@ function createPostCard(post) {
                         <strong>${escapeHtml(comment.author?.username || '匿名')}</strong>
                         <span class="comment-date">📅 ${commentDate}</span>
                     </div>
-                    <div class="comment-content">${escapeHtml(comment.content)}</div>
+                    <div class="comment-content">${renderMarkdown(comment.content)}</div>
                 </div>
             `;
         });
@@ -263,6 +256,29 @@ function createPostCard(post) {
     `;
 
     return card;
+}
+
+function renderMarkdown(text) {
+    const source = (text || '').trim();
+    if (!source) return '';
+
+    try {
+        marked.setOptions({
+            gfm: true,
+            breaks: true
+        });
+
+        const rawHtml = marked.parse(source);
+
+        // 优先使用 DOMPurify 过滤 HTML，避免 XSS。
+        if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
+            return DOMPurify.sanitize(rawHtml);
+        }
+
+        return `<p>${escapeHtml(source)}</p>`;
+    } catch (error) {
+        return `<p>${escapeHtml(source)}</p>`;
+    }
 }
 
 // HTML转义，防止XSS
