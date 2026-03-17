@@ -1,0 +1,9 @@
+{
+	# 推荐在 .env 中配置 ACME_EMAIL，便于证书到期提醒
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy blog_api:8080
+}

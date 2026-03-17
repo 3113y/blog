@@ -189,6 +189,43 @@ git pull
 docker-compose up -d  # 重新部署（保持数据库数据）
 ```
 
+### 场景 5：启用 HTTPS（80/443）
+
+1. 在服务器项目根目录创建或修改 `.env`：
+
+```bash
+DOMAIN=你的域名
+ACME_EMAIL=你的邮箱
+```
+
+2. 确认 DNS 已生效：
+
+```bash
+nslookup 你的域名
+```
+
+3. 确认服务器安全组/防火墙已放行 TCP 80 和 443。
+
+4. 启动或更新服务：
+
+```bash
+docker-compose up -d --build
+```
+
+5. 查看证书签发与代理日志：
+
+```bash
+docker-compose logs -f caddy
+```
+
+6. 验证：
+
+```bash
+curl -I https://你的域名
+```
+
+如果返回 `HTTP/2 200` 或 `HTTP/1.1 200`，说明 HTTPS 已正常工作。
+
 ---
 
 ## 📁 服务器项目结构

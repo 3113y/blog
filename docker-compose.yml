@@ -21,8 +21,8 @@ services:
   blog_api:
     build: .
     container_name: blog_api
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       - GIN_MODE=release
       - DB_HOST=blog_db  # 这里的名字必须对应上面 service 的名字
@@ -35,5 +35,25 @@ services:
         condition: service_healthy # 等待数据库完全就绪再启动
     restart: unless-stopped
 
+  # Caddy 反向代理（自动 HTTPS）
+  caddy:
+    image: caddy:2-alpine
+    container_name: blog_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - ACME_EMAIL=${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - blog_api
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
