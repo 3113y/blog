@@ -1,6 +1,9 @@
 // 全局配置
 const API_BASE_URL = '/api';
 let currentUser = null;
+let cachedPosts = [];
+const HOME_COMMENT_PREVIEW_COUNT = 2;
+const HOME_CONTENT_PREVIEW_LENGTH = 220;
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
@@ -99,6 +102,7 @@ function hideAllPages() {
     document.getElementById('auth-page').style.display = 'none';
     document.getElementById('home-page').style.display = 'none';
     document.getElementById('create-page').style.display = 'none';
+    document.getElementById('detail-page').style.display = 'none';
 }
 
 // 注册处理
@@ -172,7 +176,7 @@ function logout() {
 }
 
 // 加载文章列表
-async function loadPosts() {
+async function loadPosts(focusPostId = null) {
     const container = document.getElementById('posts-container');
     const loading = document.getElementById('loading');
 
@@ -182,15 +186,21 @@ async function loadPosts() {
     try {
         const response = await fetch('/posts');
         const posts = await response.json();
+        cachedPosts = Array.isArray(posts) ? posts : [];
 
         loading.classList.remove('active');
 
-        if (!posts || posts.length === 0) {
+        if (!cachedPosts || cachedPosts.length === 0) {
             container.innerHTML = '<p style="text-align: center; padding: 2rem; color: #999;">还没有文章，去发布一篇吧！</p>';
             return;
         }
 
-        posts.forEach(post => {
+        if (focusPostId) {
+            goToPostDetail(focusPostId, cachedPosts);
+            return;
+        }
+
+        cachedPosts.forEach(post => {
             const card = createPostCard(post);
             container.appendChild(card);
         });
@@ -204,19 +214,23 @@ async function loadPosts() {
 function createPostCard(post) {
     const card = document.createElement('div');
     card.className = 'post-card';
+    card.onclick = () => goToPostDetail(post.id);
 
     const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
-    const contentHtml = renderMarkdown(post.content);
+    const previewText = getContentPreview(post.content, HOME_CONTENT_PREVIEW_LENGTH);
+    const allComments = Array.isArray(post.comments) ? post.comments : [];
+    const previewComments = allComments.slice(0, HOME_COMMENT_PREVIEW_COUNT);
+    const hiddenCommentCount = Math.max(allComments.length - previewComments.length, 0);
 
     // 创建评论HTML
     let commentsHtml = `
         <div class="comments-section">
-            <h4>评论 (${post.comments?.length || 0})</h4>
+            <h4>评论预览 (${previewComments.length}/${allComments.length})</h4>
             <div class="comments-list">
     `;
     
-    if (post.comments && post.comments.length > 0) {
-        post.comments.forEach(comment => {
+    if (previewComments.length > 0) {
+        previewComments.forEach(comment => {
             const commentDate = new Date(comment.created_at).toLocaleDateString('zh-CN');
             commentsHtml += `
                 <div class="comment-item">
@@ -231,10 +245,74 @@ function createPostCard(post) {
     } else {
         commentsHtml += '<p style="text-align: center; color: #999;">还没有评论</p>';
     }
+
+    if (hiddenCommentCount > 0) {
+        commentsHtml += `<p class="more-comments-tip">还有 ${hiddenCommentCount} 条评论，点击查看全文后可见</p>`;
+    }
     
     commentsHtml += `</div>`;
-    
-    // 只有登陆用户才能评论
+
+    commentsHtml += `</div>`;
+
+    card.innerHTML = `
+        <h3>${escapeHtml(post.title)}</h3>
+        <div class="post-meta">📅 ${createdAt} | 👤 ${escapeHtml(post.author?.username || '匿名')}</div>
+        <div class="post-excerpt">${escapeHtml(previewText)}</div>
+        ${commentsHtml}
+        <div class="post-actions">
+            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); goToPostDetail(${post.id});">查看全文</button>
+        </div>
+    `;
+
+    return card;
+}
+
+function goToPostDetail(postId, postsData = null) {
+    const source = Array.isArray(postsData) ? postsData : cachedPosts;
+    const post = source.find(item => item.id === postId);
+
+    if (!post) {
+        alert('文章不存在或已被删除');
+        return;
+    }
+
+    hideAllPages();
+    document.getElementById('detail-page').style.display = 'block';
+    renderPostDetail(post);
+}
+
+function renderPostDetail(post) {
+    const detailContainer = document.getElementById('post-detail-container');
+    if (!detailContainer) return;
+
+    const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
+    const allComments = Array.isArray(post.comments) ? post.comments : [];
+
+    let commentsHtml = `
+        <div class="comments-section">
+            <h4>全部评论 (${allComments.length})</h4>
+            <div class="comments-list">
+    `;
+
+    if (allComments.length > 0) {
+        allComments.forEach(comment => {
+            const commentDate = new Date(comment.created_at).toLocaleDateString('zh-CN');
+            commentsHtml += `
+                <div class="comment-item">
+                    <div class="comment-meta">
+                        <strong>${escapeHtml(comment.author?.username || '匿名')}</strong>
+                        <span class="comment-date">📅 ${commentDate}</span>
+                    </div>
+                    <div class="comment-content">${renderMarkdown(comment.content)}</div>
+                </div>
+            `;
+        });
+    } else {
+        commentsHtml += '<p style="text-align: center; color: #999;">还没有评论</p>';
+    }
+
+    commentsHtml += '</div>';
+
     if (currentUser) {
         commentsHtml += `
             <div class="comment-form">
@@ -243,19 +321,40 @@ function createPostCard(post) {
             </div>
         `;
     } else {
-        commentsHtml += `<p style="text-align: center; color: #999;">登录后可发表评论</p>`;
+        commentsHtml += '<p style="text-align: center; color: #999;">登录后可发表评论</p>';
     }
-    
-    commentsHtml += `</div>`;
 
-    card.innerHTML = `
-        <h3>${escapeHtml(post.title)}</h3>
-        <div class="post-meta">📅 ${createdAt} | 👤 ${escapeHtml(post.author?.username || '匿名')}</div>
-        <div class="post-content">${contentHtml}</div>
-        ${commentsHtml}
+    commentsHtml += '</div>';
+
+    detailContainer.innerHTML = `
+        <article class="post-detail-card">
+            <h2>${escapeHtml(post.title)}</h2>
+            <div class="post-meta">📅 ${createdAt} | 👤 ${escapeHtml(post.author?.username || '匿名')}</div>
+            <div class="post-content-full">${renderMarkdown(post.content)}</div>
+            ${commentsHtml}
+        </article>
     `;
+}
 
-    return card;
+function getContentPreview(content, maxLength) {
+    const plainText = stripMarkdownSyntax(content || '').trim();
+    if (!plainText) return '暂无内容';
+    if (plainText.length <= maxLength) return plainText;
+    return `${plainText.slice(0, maxLength)}...`;
+}
+
+function stripMarkdownSyntax(text) {
+    return (text || '')
+        .replace(/```[\s\S]*?```/g, ' ')
+        .replace(/`[^`]*`/g, ' ')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+        .replace(/\[[^\]]+\]\([^)]*\)/g, '$1')
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/^>\s+/gm, '')
+        .replace(/^\s*[-*+]\s+/gm, '')
+        .replace(/^\s*\d+\.\s+/gm, '')
+        .replace(/[*_~]/g, '')
+        .replace(/\s+/g, ' ');
 }
 
 function renderMarkdown(text) {
@@ -263,22 +362,121 @@ function renderMarkdown(text) {
     if (!source) return '';
 
     try {
-        marked.setOptions({
-            gfm: true,
-            breaks: true
-        });
+        let rawHtml = '';
 
-        const rawHtml = marked.parse(source);
+        // 优先使用 marked；若 CDN 不可用则自动回退到本地基础渲染。
+        if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+            marked.setOptions({
+                gfm: true,
+                breaks: true
+            });
+            const parsed = marked.parse(source);
+            rawHtml = typeof parsed === 'string' ? parsed : basicMarkdownToHtml(source);
+        } else {
+            rawHtml = basicMarkdownToHtml(source);
+        }
 
-        // 优先使用 DOMPurify 过滤 HTML，避免 XSS。
         if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
             return DOMPurify.sanitize(rawHtml);
         }
 
-        return `<p>${escapeHtml(source)}</p>`;
+        // 没有 DOMPurify 时使用安全的基础渲染，避免返回未过滤 HTML。
+        return basicMarkdownToHtml(source);
     } catch (error) {
-        return `<p>${escapeHtml(source)}</p>`;
+        return basicMarkdownToHtml(source);
     }
+}
+
+function basicMarkdownToHtml(text) {
+    const safeText = escapeHtml(text || '');
+    if (!safeText.trim()) return '';
+
+    const lines = safeText.split(/\r?\n/);
+    const html = [];
+    const listStack = [];
+    let inCodeBlock = false;
+    let codeBlockBuffer = [];
+
+    const closeLists = () => {
+        while (listStack.length > 0) {
+            html.push(`</${listStack.pop()}>`);
+        }
+    };
+
+    for (const line of lines) {
+        const fenceMatch = line.match(/^```/);
+        if (fenceMatch) {
+            if (!inCodeBlock) {
+                closeLists();
+                inCodeBlock = true;
+                codeBlockBuffer = [];
+            } else {
+                html.push(`<pre><code>${codeBlockBuffer.join('\n')}</code></pre>`);
+                inCodeBlock = false;
+                codeBlockBuffer = [];
+            }
+            continue;
+        }
+
+        if (inCodeBlock) {
+            codeBlockBuffer.push(line);
+            continue;
+        }
+
+        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+            closeLists();
+            const level = headingMatch[1].length;
+            html.push(`<h${level}>${applyInlineMarkdown(headingMatch[2])}</h${level}>`);
+            continue;
+        }
+
+        const orderedMatch = line.match(/^\s*\d+\.\s+(.+)$/);
+        if (orderedMatch) {
+            if (listStack[listStack.length - 1] !== 'ol') {
+                closeLists();
+                listStack.push('ol');
+                html.push('<ol>');
+            }
+            html.push(`<li>${applyInlineMarkdown(orderedMatch[1])}</li>`);
+            continue;
+        }
+
+        const unorderedMatch = line.match(/^\s*[-*+]\s+(.+)$/);
+        if (unorderedMatch) {
+            if (listStack[listStack.length - 1] !== 'ul') {
+                closeLists();
+                listStack.push('ul');
+                html.push('<ul>');
+            }
+            html.push(`<li>${applyInlineMarkdown(unorderedMatch[1])}</li>`);
+            continue;
+        }
+
+        if (!line.trim()) {
+            closeLists();
+            continue;
+        }
+
+        closeLists();
+        html.push(`<p>${applyInlineMarkdown(line)}</p>`);
+    }
+
+    if (inCodeBlock) {
+        html.push(`<pre><code>${codeBlockBuffer.join('\n')}</code></pre>`);
+    }
+    closeLists();
+
+    return html.join('');
+}
+
+function applyInlineMarkdown(text) {
+    return (text || '')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
 // HTML转义，防止XSS
@@ -318,7 +516,12 @@ async function submitComment(postId) {
         if (response.ok) {
             textarea.value = '';
             alert('评论发表成功！');
-            loadPosts(); // 重新加载文章列表以显示新评论
+            // 重新加载数据；如果当前在详情页，则保持在详情页查看最新评论。
+            if (document.getElementById('detail-page').style.display === 'block') {
+                loadPosts(postId);
+            } else {
+                loadPosts();
+            }
         } else {
             const data = await response.json();
             alert(data.error || '评论发表失败');

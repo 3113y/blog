@@ -207,6 +207,10 @@ body {
     font-size: 1.3rem;
 }
 
+.post-card {
+    cursor: pointer;
+}
+
 .post-meta {
     color: #999;
     font-size: 0.9rem;
@@ -219,6 +223,81 @@ body {
     max-height: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.post-excerpt {
+    color: #666;
+    line-height: 1.8;
+    margin-bottom: 0.8rem;
+}
+
+.post-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.8rem;
+}
+
+.more-comments-tip {
+    color: #888;
+    font-size: 0.9rem;
+    margin-top: 0.6rem;
+}
+
+.detail-top-actions {
+    margin-bottom: 1rem;
+}
+
+.post-detail-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+}
+
+.post-detail-card h2 {
+    color: #333;
+    margin-bottom: 0.8rem;
+}
+
+.post-content-full {
+    color: #444;
+    line-height: 1.9;
+    margin-top: 1rem;
+}
+
+.post-content-full h1,
+.post-content-full h2,
+.post-content-full h3,
+.post-content-full h4,
+.post-content-full h5,
+.post-content-full h6 {
+    text-align: left;
+    margin: 1rem 0 0.6rem;
+    padding-top: 0;
+}
+
+.post-content-full p {
+    margin: 0.7rem 0;
+}
+
+.post-content-full pre {
+    background: #f6f8fa;
+    border-radius: 6px;
+    padding: 0.9rem;
+    overflow-x: auto;
+    margin: 0.8rem 0;
+}
+
+.post-content-full code {
+    background: #f1f3f5;
+    border-radius: 4px;
+    padding: 0.15rem 0.3rem;
+}
+
+.post-content-full ul,
+.post-content-full ol {
+    margin: 0.8rem 0 0.8rem 1.4rem;
 }
 
 /* 评论区域 */
