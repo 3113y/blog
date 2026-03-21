@@ -275,48 +275,6 @@ curl -I https://你的域名
 
 ---
 
-## 🔧 当出问题时
-
-### 问题 1：服务器 build 目录不存在
-
-```bash
-mkdir -p ~/blog/build
-```
-
-### 问题 2：上传的二进制无法执行
-
-```bash
-cd ~/blog/build
-chmod +x api
-```
-
-### 问题 3：容器无法启动
-
-```bash
-# 查看 Docker 日志
-docker-compose logs blog_api
-
-# 检查二进制文件
-ls -la build/api
-
-# 检查权限
-file build/api
-```
-
-### 问题 4：源代码和服务器不同步
-
-```bash
-# 本地推送所有代码
-git push origin main
-
-# 服务器拉取最新代码
-git pull origin main
-
-# 验证状态
-git status
-```
-
----
 
 ## 📊 性能优化
 

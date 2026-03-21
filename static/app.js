@@ -214,10 +214,11 @@ async function loadPosts(focusPostId = null) {
 function createPostCard(post) {
     const card = document.createElement('div');
     card.className = 'post-card';
-    card.onclick = () => goToPostDetail(post.id);
+    const postId = getEntityId(post);
+    card.onclick = () => goToPostDetail(postId);
 
-    const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
-    const previewText = getContentPreview(post.content, HOME_CONTENT_PREVIEW_LENGTH);
+    const createdAt = formatDate(post);
+    const previewHtml = buildMarkdownPreview(post.content, HOME_CONTENT_PREVIEW_LENGTH);
     const allComments = Array.isArray(post.comments) ? post.comments : [];
     const previewComments = allComments.slice(0, HOME_COMMENT_PREVIEW_COUNT);
     const hiddenCommentCount = Math.max(allComments.length - previewComments.length, 0);
@@ -231,7 +232,7 @@ function createPostCard(post) {
     
     if (previewComments.length > 0) {
         previewComments.forEach(comment => {
-            const commentDate = new Date(comment.created_at).toLocaleDateString('zh-CN');
+            const commentDate = formatDate(comment);
             commentsHtml += `
                 <div class="comment-item">
                     <div class="comment-meta">
@@ -257,10 +258,10 @@ function createPostCard(post) {
     card.innerHTML = `
         <h3>${escapeHtml(post.title)}</h3>
         <div class="post-meta">📅 ${createdAt} | 👤 ${escapeHtml(post.author?.username || '匿名')}</div>
-        <div class="post-excerpt">${escapeHtml(previewText)}</div>
+        <div class="post-content">${previewHtml}</div>
         ${commentsHtml}
         <div class="post-actions">
-            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); goToPostDetail(${post.id});">查看全文</button>
+            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); goToPostDetail(${postId});">查看全文</button>
         </div>
     `;
 
@@ -269,7 +270,8 @@ function createPostCard(post) {
 
 function goToPostDetail(postId, postsData = null) {
     const source = Array.isArray(postsData) ? postsData : cachedPosts;
-    const post = source.find(item => item.id === postId);
+    const normalizedId = Number(postId);
+    const post = source.find(item => Number(getEntityId(item)) === normalizedId);
 
     if (!post) {
         alert('文章不存在或已被删除');
@@ -285,8 +287,9 @@ function renderPostDetail(post) {
     const detailContainer = document.getElementById('post-detail-container');
     if (!detailContainer) return;
 
-    const createdAt = new Date(post.created_at).toLocaleDateString('zh-CN');
+    const createdAt = formatDate(post);
     const allComments = Array.isArray(post.comments) ? post.comments : [];
+    const postId = getEntityId(post);
 
     let commentsHtml = `
         <div class="comments-section">
@@ -296,7 +299,7 @@ function renderPostDetail(post) {
 
     if (allComments.length > 0) {
         allComments.forEach(comment => {
-            const commentDate = new Date(comment.created_at).toLocaleDateString('zh-CN');
+            const commentDate = formatDate(comment);
             commentsHtml += `
                 <div class="comment-item">
                     <div class="comment-meta">
@@ -316,8 +319,8 @@ function renderPostDetail(post) {
     if (currentUser) {
         commentsHtml += `
             <div class="comment-form">
-                <textarea id="comment-${post.id}" class="comment-input" placeholder="发表评论..." rows="3"></textarea>
-                <button class="btn btn-primary btn-small" onclick="submitComment(${post.id})">发表评论</button>
+                <textarea id="comment-${postId}" class="comment-input" placeholder="发表评论..." rows="3"></textarea>
+                <button class="btn btn-primary btn-small" onclick="submitComment(${postId})">发表评论</button>
             </div>
         `;
     } else {
@@ -336,25 +339,43 @@ function renderPostDetail(post) {
     `;
 }
 
-function getContentPreview(content, maxLength) {
-    const plainText = stripMarkdownSyntax(content || '').trim();
-    if (!plainText) return '暂无内容';
-    if (plainText.length <= maxLength) return plainText;
-    return `${plainText.slice(0, maxLength)}...`;
+function getEntityId(entity) {
+    if (!entity || typeof entity !== 'object') return 0;
+    const id = entity.id ?? entity.ID;
+    return Number(id || 0);
 }
 
-function stripMarkdownSyntax(text) {
-    return (text || '')
-        .replace(/```[\s\S]*?```/g, ' ')
-        .replace(/`[^`]*`/g, ' ')
-        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-        .replace(/\[[^\]]+\]\([^)]*\)/g, '$1')
-        .replace(/^#{1,6}\s+/gm, '')
-        .replace(/^>\s+/gm, '')
-        .replace(/^\s*[-*+]\s+/gm, '')
-        .replace(/^\s*\d+\.\s+/gm, '')
-        .replace(/[*_~]/g, '')
-        .replace(/\s+/g, ' ');
+function formatDate(entity) {
+    const raw = entity?.created_at ?? entity?.CreatedAt;
+    if (!raw) return '未知日期';
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return '未知日期';
+    return date.toLocaleDateString('zh-CN');
+}
+
+function buildMarkdownPreview(content, maxLength) {
+    const source = (content || '').trim();
+    if (!source) return '<p>暂无内容</p>';
+
+    const lines = source.split(/\r?\n/);
+    let currentLength = 0;
+    const pickedLines = [];
+
+    for (const line of lines) {
+        const nextLength = currentLength + line.length + 1;
+        if (nextLength > maxLength) break;
+        pickedLines.push(line);
+        currentLength = nextLength;
+    }
+
+    if (pickedLines.length === 0) {
+        pickedLines.push(source.slice(0, maxLength));
+    }
+
+    const clipped = pickedLines.join('\n').trim();
+    const hasMore = clipped.length < source.length;
+    const previewSource = hasMore ? `${clipped}\n\n...` : clipped;
+    return renderMarkdown(previewSource);
 }
 
 function renderMarkdown(text) {
