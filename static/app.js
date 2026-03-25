@@ -379,7 +379,7 @@ function buildMarkdownPreview(content, maxLength) {
 }
 
 function renderMarkdown(text) {
-    const source = (text || '').trim();
+    const source = normalizeMarkdownSource(text);
     if (!source) return '';
 
     try {
@@ -387,10 +387,7 @@ function renderMarkdown(text) {
 
         // 优先使用 marked；若 CDN 不可用则自动回退到本地基础渲染。
         if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-            marked.setOptions({
-                gfm: true,
-                breaks: true
-            });
+            marked.setOptions({ gfm: true, breaks: true });
             const parsed = marked.parse(source);
             rawHtml = typeof parsed === 'string' ? parsed : basicMarkdownToHtml(source);
         } else {
@@ -406,6 +403,23 @@ function renderMarkdown(text) {
     } catch (error) {
         return basicMarkdownToHtml(source);
     }
+}
+
+function normalizeMarkdownSource(text) {
+    const raw = String(text || '');
+    if (!raw.trim()) return '';
+
+    // 兼容数据库中被保存成 "\\n" 的文本（常见于手工导入或脚本写入）。
+    const hasRealNewline = /\r?\n/.test(raw);
+    if (!hasRealNewline && /\\n|\\r/.test(raw)) {
+        return raw
+            .replace(/\\r\\n/g, '\n')
+            .replace(/\\n/g, '\n')
+            .replace(/\\r/g, '\n')
+            .trim();
+    }
+
+    return raw.trim();
 }
 
 function basicMarkdownToHtml(text) {

@@ -225,6 +225,61 @@ body {
     text-overflow: ellipsis;
 }
 
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6,
+.comment-content h1,
+.comment-content h2,
+.comment-content h3,
+.comment-content h4,
+.comment-content h5,
+.comment-content h6,
+.post-content-full h1,
+.post-content-full h2,
+.post-content-full h3,
+.post-content-full h4,
+.post-content-full h5,
+.post-content-full h6 {
+    margin: 0.7rem 0 0.5rem;
+    line-height: 1.35;
+}
+
+.post-content p,
+.comment-content p,
+.post-content-full p {
+    margin: 0.45rem 0;
+}
+
+.post-content ul,
+.post-content ol,
+.comment-content ul,
+.comment-content ol,
+.post-content-full ul,
+.post-content-full ol {
+    margin: 0.6rem 0 0.6rem 1.3rem;
+}
+
+.post-content pre,
+.comment-content pre,
+.post-content-full pre {
+    background: #f6f8fa;
+    border-radius: 6px;
+    padding: 0.7rem;
+    overflow-x: auto;
+    margin: 0.6rem 0;
+}
+
+.post-content code,
+.comment-content code,
+.post-content-full code {
+    background: #f1f3f5;
+    border-radius: 4px;
+    padding: 0.12rem 0.28rem;
+}
+
 .post-excerpt {
     color: #666;
     line-height: 1.8;
