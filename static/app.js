@@ -409,7 +409,20 @@ function normalizeMarkdownSource(text) {
     const raw = String(text || '');
     if (!raw.trim()) return '';
 
-    let normalized = raw;
+    let normalized = raw
+        .replace(/\u2028|\u2029|\u0085/g, '\n')
+        .replace(/\r\n?|\n/g, '\n');
+
+    // 兼容整段被意外包裹在一层引号中的场景（例如手工 SQL 粘贴时带上了 JSON 字符串外壳）。
+    const hasOuterDoubleQuotes = normalized.startsWith('"') && normalized.endsWith('"');
+    const hasOuterSingleQuotes = normalized.startsWith("'") && normalized.endsWith("'");
+    if ((hasOuterDoubleQuotes || hasOuterSingleQuotes) && normalized.length >= 2) {
+        const unwrapped = normalized.slice(1, -1);
+        const markdownHints = /(^|\n)\s*#{1,6}\s|```|\n\s*[-*+]\s|\n\s*\d+\.\s/.test(unwrapped);
+        if (markdownHints) {
+            normalized = unwrapped;
+        }
+    }
 
     // 兼容数据库中被保存成字面量转义序列的文本（如 \n、\t）。
     for (let i = 0; i < 3; i++) {
