@@ -220,7 +220,7 @@ body {
 .post-content {
     color: #666;
     line-height: 1.8;
-    max-height: 150px;
+    max-height: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     overflow-wrap: anywhere;
@@ -272,6 +272,9 @@ body {
     padding: 0.7rem;
     overflow-x: auto;
     margin: 0.6rem 0;
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .post-content code,
@@ -280,6 +283,7 @@ body {
     background: #f1f3f5;
     border-radius: 4px;
     padding: 0.12rem 0.28rem;
+    white-space: pre-wrap;
 }
 
 .post-excerpt {

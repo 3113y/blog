@@ -3,7 +3,6 @@ const API_BASE_URL = '/api';
 let currentUser = null;
 let cachedPosts = [];
 const HOME_COMMENT_PREVIEW_COUNT = 2;
-const HOME_CONTENT_PREVIEW_LENGTH = 220;
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
@@ -218,7 +217,7 @@ function createPostCard(post) {
     card.onclick = () => goToPostDetail(postId);
 
     const createdAt = formatDate(post);
-    const previewHtml = buildMarkdownPreview(post.content, HOME_CONTENT_PREVIEW_LENGTH);
+    const previewHtml = renderMarkdown(post.content || '');
     const allComments = Array.isArray(post.comments) ? post.comments : [];
     const previewComments = allComments.slice(0, HOME_COMMENT_PREVIEW_COUNT);
     const hiddenCommentCount = Math.max(allComments.length - previewComments.length, 0);
@@ -356,26 +355,7 @@ function formatDate(entity) {
 function buildMarkdownPreview(content, maxLength) {
     const source = (content || '').trim();
     if (!source) return '<p>暂无内容</p>';
-
-    const lines = source.split(/\r?\n/);
-    let currentLength = 0;
-    const pickedLines = [];
-
-    for (const line of lines) {
-        const nextLength = currentLength + line.length + 1;
-        if (nextLength > maxLength) break;
-        pickedLines.push(line);
-        currentLength = nextLength;
-    }
-
-    if (pickedLines.length === 0) {
-        pickedLines.push(source.slice(0, maxLength));
-    }
-
-    const clipped = pickedLines.join('\n').trim();
-    const hasMore = clipped.length < source.length;
-    const previewSource = hasMore ? `${clipped}\n\n...` : clipped;
-    return renderMarkdown(previewSource);
+    return renderMarkdown(source);
 }
 
 function renderMarkdown(text) {
