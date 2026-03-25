@@ -431,6 +431,7 @@ function basicMarkdownToHtml(text) {
     const listStack = [];
     let inCodeBlock = false;
     let codeBlockBuffer = [];
+    let paragraphBuffer = [];
 
     const closeLists = () => {
         while (listStack.length > 0) {
@@ -438,10 +439,18 @@ function basicMarkdownToHtml(text) {
         }
     };
 
+    const flushParagraph = () => {
+        if (paragraphBuffer.length === 0) return;
+        const merged = paragraphBuffer.join('<br>');
+        html.push(`<p>${applyInlineMarkdown(merged)}</p>`);
+        paragraphBuffer = [];
+    };
+
     for (const line of lines) {
         const fenceMatch = line.match(/^```/);
         if (fenceMatch) {
             if (!inCodeBlock) {
+                flushParagraph();
                 closeLists();
                 inCodeBlock = true;
                 codeBlockBuffer = [];
@@ -460,6 +469,7 @@ function basicMarkdownToHtml(text) {
 
         const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
         if (headingMatch) {
+            flushParagraph();
             closeLists();
             const level = headingMatch[1].length;
             html.push(`<h${level}>${applyInlineMarkdown(headingMatch[2])}</h${level}>`);
@@ -468,6 +478,7 @@ function basicMarkdownToHtml(text) {
 
         const orderedMatch = line.match(/^\s*\d+\.\s+(.+)$/);
         if (orderedMatch) {
+            flushParagraph();
             if (listStack[listStack.length - 1] !== 'ol') {
                 closeLists();
                 listStack.push('ol');
@@ -479,6 +490,7 @@ function basicMarkdownToHtml(text) {
 
         const unorderedMatch = line.match(/^\s*[-*+]\s+(.+)$/);
         if (unorderedMatch) {
+            flushParagraph();
             if (listStack[listStack.length - 1] !== 'ul') {
                 closeLists();
                 listStack.push('ul');
@@ -489,17 +501,19 @@ function basicMarkdownToHtml(text) {
         }
 
         if (!line.trim()) {
+            flushParagraph();
             closeLists();
             continue;
         }
 
         closeLists();
-        html.push(`<p>${applyInlineMarkdown(line)}</p>`);
+        paragraphBuffer.push(line);
     }
 
     if (inCodeBlock) {
         html.push(`<pre><code>${codeBlockBuffer.join('\n')}</code></pre>`);
     }
+    flushParagraph();
     closeLists();
 
     return html.join('');
