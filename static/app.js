@@ -409,17 +409,36 @@ function normalizeMarkdownSource(text) {
     const raw = String(text || '');
     if (!raw.trim()) return '';
 
-    // 兼容数据库中被保存成 "\\n" 的文本（常见于手工导入或脚本写入）。
-    const hasRealNewline = /\r?\n/.test(raw);
-    if (!hasRealNewline && /\\n|\\r/.test(raw)) {
-        return raw
+    let normalized = raw;
+
+    // 兼容数据库中被保存成字面量转义序列的文本（如 \n、\t）。
+    for (let i = 0; i < 3; i++) {
+        const decoded = normalized
             .replace(/\\r\\n/g, '\n')
             .replace(/\\n/g, '\n')
             .replace(/\\r/g, '\n')
+            .replace(/\\t/g, '    ');
+        if (decoded === normalized) break;
+        normalized = decoded;
+    }
+
+    normalized = normalized.trim();
+
+    // 兼容“直接贴进数据库后被压成一行”的 Markdown。
+    // 仅在几乎没有真实换行且包含明显 Markdown 块标记时启用，减少误伤普通文本。
+    const newlineCount = (normalized.match(/\n/g) || []).length;
+    const markdownSignalCount = (normalized.match(/(^|\s)(#{1,6}\s|```|\d+\.\s|[-*+]\s)/g) || []).length;
+    if (newlineCount <= 1 && markdownSignalCount >= 3) {
+        normalized = normalized
+            .replace(/\s+(#{1,6}\s)/g, '\n\n$1')
+            .replace(/\s+(```)/g, '\n\n$1')
+            .replace(/\s+(\d+\.\s)/g, '\n$1')
+            .replace(/\s+([-*+]\s)/g, '\n$1')
+            .replace(/\n{3,}/g, '\n\n')
             .trim();
     }
 
-    return raw.trim();
+    return normalized;
 }
 
 function basicMarkdownToHtml(text) {
