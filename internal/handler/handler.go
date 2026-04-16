@@ -27,9 +27,11 @@ type LoginRequest struct {
 
 // CreatePostRequest 创建文章请求体
 type CreatePostRequest struct {
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
-	UserID  uint   `json:"user_id" binding:"required"`
+	Title      string   `json:"title" binding:"required"`
+	Content    string   `json:"content" binding:"required"`
+	Categories []string `json:"categories"`
+	Tags       []string `json:"tags"`
+	UserID     uint     `json:"user_id" binding:"required"`
 }
 
 // CreateCommentRequest 创建评论请求体
@@ -41,6 +43,32 @@ type CreateCommentRequest struct {
 
 // 博主ID (只有这个ID的用户能发布文章)
 const AUTHOR_ID = 1
+
+func normalizeStringSlice(values []string, lower bool) []string {
+	if len(values) == 0 {
+		return []string{}
+	}
+
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		if lower {
+			trimmed = strings.ToLower(trimmed)
+		}
+		if _, exists := seen[trimmed]; exists {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		result = append(result, trimmed)
+	}
+
+	return result
+}
 
 // GetHealth 健康检查
 func GetHealth(c *gin.Context) {
@@ -156,9 +184,15 @@ func CreatePost(c *gin.Context) {
 
 	// 创建文章
 	post := model.Post{
-		Title:   req.Title,
-		Content: req.Content,
-		UserID:  req.UserID,
+		Title:      strings.TrimSpace(req.Title),
+		Content:    strings.TrimSpace(req.Content),
+		Categories: normalizeStringSlice(req.Categories, false),
+		Tags:       normalizeStringSlice(req.Tags, true),
+		UserID:     req.UserID,
+	}
+	if post.Title == "" || post.Content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title and content are required"})
+		return
 	}
 
 	if result := repository.DB.Create(&post); result.Error != nil {

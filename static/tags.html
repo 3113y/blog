@@ -3,26 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>博客首页</title>
+  <title>标签</title>
   <link rel="stylesheet" href="/assets/css/jekyll-theme-chirpy.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400&family=Source+Sans+Pro:wght@400;600;700;900&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css">
   <script src="/assets/js/dist/theme.min.js"></script>
-  <style>
-    .post-preview-text {
-      white-space: pre-wrap;
-      line-height: 1.6;
-      color: var(--text-muted-color);
-      margin-bottom: 0.8rem;
-    }
-
-    .error-tip {
-      color: #d63939;
-      margin-top: 1rem;
-    }
-  </style>
 </head>
-<body data-page="home">
+<body data-page="tags">
   <aside aria-label="Sidebar" id="sidebar" class="d-flex flex-column align-items-end">
     <header class="profile-wrapper">
       <a class="site-title d-block" href="/">My Blog</a>
@@ -30,9 +17,9 @@
     </header>
     <nav class="flex-column flex-grow-1 w-100 ps-0">
       <ul class="nav">
-        <li class="nav-item active"><a href="/" class="nav-link"><i class="fa-fw fas fa-home"></i><span>HOME</span></a></li>
+        <li class="nav-item"><a href="/" class="nav-link"><i class="fa-fw fas fa-home"></i><span>HOME</span></a></li>
         <li class="nav-item"><a href="/categories/" class="nav-link"><i class="fa-fw fas fa-stream"></i><span>CATEGORIES</span></a></li>
-        <li class="nav-item"><a href="/tags/" class="nav-link"><i class="fa-fw fas fa-tags"></i><span>TAGS</span></a></li>
+        <li class="nav-item active"><a href="/tags/" class="nav-link"><i class="fa-fw fas fa-tags"></i><span>TAGS</span></a></li>
         <li class="nav-item"><a href="/archives/" class="nav-link"><i class="fa-fw fas fa-archive"></i><span>ARCHIVES</span></a></li>
       </ul>
     </nav>
@@ -42,19 +29,18 @@
     <div class="container d-flex flex-column px-xxl-5">
       <header id="topbar-wrapper" class="flex-shrink-0" aria-label="Top Bar">
         <div id="topbar" class="d-flex align-items-center justify-content-between px-lg-3 h-100">
-          <nav id="breadcrumb" aria-label="Breadcrumb"><span>首页</span></nav>
-          <div id="topbar-title">文章列表</div>
+          <nav id="breadcrumb" aria-label="Breadcrumb"><span><a href="/">首页</a></span><span>标签</span></nav>
+          <div id="topbar-title">Tags</div>
         </div>
       </header>
 
       <div class="row flex-grow-1">
         <main aria-label="Main Content" class="col-12 col-lg-11 col-xl-9 px-md-4">
-          <div class="px-1">
-            <h1 class="mb-4">最新文章</h1>
-            <div id="post-list" class="flex-grow-1"></div>
-            <div id="loading-tip" class="text-muted">正在加载文章...</div>
-            <div id="error-tip" class="error-tip"></div>
-          </div>
+          <article class="px-1">
+            <h1 class="mb-4">标签</h1>
+            <div id="bucket-list"></div>
+            <div id="error-tip" class="text-danger"></div>
+          </article>
         </main>
       </div>
     </div>

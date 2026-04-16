@@ -31,11 +31,13 @@ func (u *User) BeforeSave(tx *gorm.DB) error {
 // Post 文章模型
 type Post struct {
 	gorm.Model
-	Title    string    `gorm:"not null" json:"title"`
-	Content  string    `gorm:"type:text" json:"content"`
-	UserID   uint      `json:"user_id"`
-	User     User      `json:"author,omitempty"`
-	Comments []Comment `json:"comments,omitempty"`
+	Title      string    `gorm:"not null" json:"title"`
+	Content    string    `gorm:"type:text" json:"content"`
+	Categories []string  `gorm:"type:text;serializer:json" json:"categories"`
+	Tags       []string  `gorm:"type:text;serializer:json" json:"tags"`
+	UserID     uint      `json:"user_id"`
+	User       User      `json:"author,omitempty"`
+	Comments   []Comment `json:"comments,omitempty"`
 }
 
 // Comment 评论模型
@@ -45,6 +47,7 @@ type Comment struct {
 	UserID  uint   `json:"user_id"`
 	Email   string `gorm:"uniqueIndex;not null" json:"email"`
 	PostID  uint   `json:"post_id"`
+	User    User   `json:"author,omitempty"`
 }
 
 func (u *User) hashPasswordIfNeeded() error {
