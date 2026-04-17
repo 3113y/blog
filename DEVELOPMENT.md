@@ -85,11 +85,11 @@ cd ~/blog
 git pull origin main
 
 # 2. 重启容器（使用新的二进制文件）
-docker-compose restart blog_api
+docker compose restart blog_api
 
 # 3. 验证
 curl http://localhost:8080/health
-docker-compose logs -f blog_api
+docker compose logs -f blog_api
 ```
 
 ---
@@ -123,7 +123,7 @@ CMD ["./api"]
 # 拖拽 dist/api 到服务器的 build/api
 
 # 服务器
-docker-compose restart blog_api   # 3. 重启 (5秒)
+docker compose restart blog_api   # 3. 重启 (5秒)
 ```
 
 **总耗时：** 15 秒左右 ✨
@@ -158,7 +158,7 @@ git push
 
 # 服务器
 git pull            # 同步源代码
-docker-compose restart blog_api  # 重启应用
+docker compose restart blog_api  # 重启应用
 ```
 
 ### 场景 3：修改数据库模型
@@ -172,7 +172,7 @@ git push
 
 # 服务器
 git pull
-docker-compose restart blog_api
+docker compose restart blog_api
 # GORM 的 AutoMigrate 会自动更新数据库结构
 ```
 
@@ -186,7 +186,7 @@ git push
 
 # 服务器
 git pull
-docker-compose up -d  # 重新部署（保持数据库数据）
+docker compose up -d  # 重新部署（保持数据库数据）
 ```
 
 ### 场景 5：启用 HTTPS（80/443）
@@ -209,13 +209,13 @@ nslookup 你的域名
 4. 启动或更新服务：
 
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 5. 查看证书签发与代理日志：
 
 ```bash
-docker-compose logs -f caddy
+docker compose logs -f caddy
 ```
 
 6. 验证：
@@ -288,7 +288,7 @@ curl -I https://你的域名
 ### 容器重启时间
 
 ```
-docker-compose restart blog_api：~2-5秒
+docker compose restart blog_api：~2-5秒
 ```
 
 ### 更新流程总时间

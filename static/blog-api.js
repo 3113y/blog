@@ -13,9 +13,22 @@
   }
 
   function normalizeMarkdownText(text) {
-    return String(text || "")
+    var normalized = String(text || "")
       .replace(/\r\n?/g, "\n")
-      .replace(/\\n/g, "\n");
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\n");
+
+    // 历史数据可能把整篇 Markdown 存成单行，这里按常见块语法做保守断行。
+    if (!normalized.includes("\n")) {
+      normalized = normalized
+        .replace(/\s(#{1,6}\s+)/g, "\n$1")
+        .replace(/\s([-*+]\s+)/g, "\n$1")
+        .replace(/\s(\d+\.\s+)/g, "\n$1")
+        .replace(/\s(```)/g, "\n$1");
+    }
+
+    return normalized;
   }
 
   function renderInlineMarkdown(text) {
