@@ -19,13 +19,32 @@
       .replace(/\\n/g, "\n")
       .replace(/\\r/g, "\n");
 
-    // 历史数据可能把整篇 Markdown 存成单行，这里按常见块语法做保守断行。
-    if (!normalized.includes("\n")) {
-      normalized = normalized
-        .replace(/\s(#{1,6}\s+)/g, "\n$1")
-        .replace(/\s([-*+]\s+)/g, "\n$1")
-        .replace(/\s(\d+\.\s+)/g, "\n$1")
-        .replace(/\s(```)/g, "\n$1");
+    // 修复围栏代码块与正文混在同一行的情况：
+    // 1) ```python code...  => ```python\ncode...
+    // 2) ``` next...        => ```\nnext...
+    normalized = normalized
+      .replace(/(^|\n)(\s*```[A-Za-z0-9_+-]+)\s+(\S[^\n]*)/g, "$1$2\n$3")
+      .replace(/(^|\n)(\s*```)\s+(\S[^\n]*)/g, "$1$2\n$3");
+
+    function splitDenseMarkdownOutsideCode(input) {
+      return input
+        .split(/(```[\s\S]*?```)/g)
+        .map(function (part, idx) {
+          // 奇数段是代码围栏内容，保持原样
+          if (idx % 2 === 1) return part;
+          return part
+            .replace(/\s(#{1,6}\s+)/g, "\n$1")
+            .replace(/\s([-*+]\s+)/g, "\n$1")
+            .replace(/\s(\d+\.\s+)/g, "\n$1");
+        })
+        .join("");
+    }
+
+    // 历史数据可能高度压缩成单行/少量换行，且标题、列表、代码块混排。
+    // 仅在非代码围栏区间做保守断行，避免把代码内容打散。
+    var newlineCount = (normalized.match(/\n/g) || []).length;
+    if (newlineCount < 3) {
+      normalized = splitDenseMarkdownOutsideCode(normalized);
     }
 
     return normalized;
