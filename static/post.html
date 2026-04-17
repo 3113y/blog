@@ -10,7 +10,6 @@
   <script src="/assets/js/dist/theme.min.js"></script>
   <style>
     .post-content {
-      white-space: pre-wrap;
       line-height: 1.75;
       margin-top: 1rem;
     }
@@ -23,13 +22,20 @@
     }
 
     .comment-content {
-      white-space: pre-wrap;
       margin-top: 0.3rem;
     }
 
     .error-tip {
       color: #d63939;
       margin-top: 1rem;
+    }
+
+    .markdown-body pre,
+    .post-content pre {
+      padding: 0.8rem;
+      background: rgba(127, 127, 127, 0.12);
+      border-radius: 0.4rem;
+      overflow: auto;
     }
   </style>
 </head>
@@ -79,6 +85,8 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="/blog-api.js"></script>
 </body>
 </html>

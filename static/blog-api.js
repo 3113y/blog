@@ -12,6 +12,122 @@
     return encodeURIComponent(String(value || "").trim());
   }
 
+  function normalizeMarkdownText(text) {
+    return String(text || "")
+      .replace(/\r\n?/g, "\n")
+      .replace(/\\n/g, "\n");
+  }
+
+  function renderInlineMarkdown(text) {
+    var escaped = escapeHtml(text);
+    escaped = escaped.replace(/`([^`]+)`/g, "<code>$1</code>");
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    escaped = escaped.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    escaped = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    return escaped;
+  }
+
+  function basicMarkdownToHtml(markdownText) {
+    var source = normalizeMarkdownText(markdownText);
+    var codeBlocks = [];
+    source = source.replace(/```([\s\S]*?)```/g, function (_, code) {
+      var token = "__CODE_BLOCK_" + codeBlocks.length + "__";
+      codeBlocks.push("<pre><code>" + escapeHtml(code.trim()) + "</code></pre>");
+      return token;
+    });
+
+    var lines = source.split("\n");
+    var html = [];
+    var inUl = false;
+    var inOl = false;
+
+    function closeLists() {
+      if (inUl) {
+        html.push("</ul>");
+        inUl = false;
+      }
+      if (inOl) {
+        html.push("</ol>");
+        inOl = false;
+      }
+    }
+
+    lines.forEach(function (line) {
+      if (/^\s*$/.test(line)) {
+        closeLists();
+        return;
+      }
+
+      var match;
+
+      match = line.match(/^(#{1,6})\s+(.*)$/);
+      if (match) {
+        closeLists();
+        var level = match[1].length;
+        html.push("<h" + level + ">" + renderInlineMarkdown(match[2]) + "</h" + level + ">");
+        return;
+      }
+
+      match = line.match(/^>\s?(.*)$/);
+      if (match) {
+        closeLists();
+        html.push("<blockquote>" + renderInlineMarkdown(match[1]) + "</blockquote>");
+        return;
+      }
+
+      match = line.match(/^[-*+]\s+(.*)$/);
+      if (match) {
+        if (!inUl) {
+          closeLists();
+          inUl = true;
+          html.push("<ul>");
+        }
+        html.push("<li>" + renderInlineMarkdown(match[1]) + "</li>");
+        return;
+      }
+
+      match = line.match(/^\d+\.\s+(.*)$/);
+      if (match) {
+        if (!inOl) {
+          closeLists();
+          inOl = true;
+          html.push("<ol>");
+        }
+        html.push("<li>" + renderInlineMarkdown(match[1]) + "</li>");
+        return;
+      }
+
+      closeLists();
+      html.push("<p>" + renderInlineMarkdown(line) + "</p>");
+    });
+
+    closeLists();
+
+    var output = html.join("\n");
+    codeBlocks.forEach(function (block, index) {
+      output = output.replace("__CODE_BLOCK_" + index + "__", block);
+    });
+
+    return output;
+  }
+
+  function renderMarkdown(markdownText) {
+    var normalized = normalizeMarkdownText(markdownText);
+
+    if (window.marked && typeof window.marked.parse === "function") {
+      var rawHtml = window.marked.parse(normalized, {
+        gfm: true,
+        breaks: true
+      });
+      if (window.DOMPurify && typeof window.DOMPurify.sanitize === "function") {
+        return window.DOMPurify.sanitize(rawHtml);
+      }
+      return rawHtml;
+    }
+
+    return basicMarkdownToHtml(normalized);
+  }
+
   function getId(item) {
     return item && (item.id ?? item.ID);
   }
@@ -131,7 +247,7 @@
       var date = formatDate(getDate(post));
       var categories = getCategories(post).map(escapeHtml).join(" / ");
       var tags = getTags(post).map(function (tag) { return "#" + escapeHtml(tag); }).join(" ");
-      var content = escapeHtml(post.content || "").slice(0, 220);
+      var content = renderMarkdown(post.content || "");
       var comments = Array.isArray(post.comments) ? post.comments.length : 0;
 
       return "" +
@@ -140,7 +256,7 @@
         "    <div class=\"col-md-12\">" +
         "      <div class=\"card-body d-flex flex-column\">" +
         "        <h1 class=\"card-title my-2 mt-md-0\">" + title + "</h1>" +
-        "        <div class=\"post-preview-text\">" + content + "</div>" +
+        "        <div class=\"post-preview-text markdown-body\">" + content + "</div>" +
         "        <div class=\"post-meta flex-grow-1 d-flex align-items-end\">" +
         "          <div class=\"me-auto\">" +
         "            <i class=\"far fa-calendar fa-fw me-1\"></i>" + date +
@@ -285,7 +401,7 @@
       "<span class=\"ms-3\"><i class=\"far fa-folder fa-fw me-1\"></i>" + categories + "</span>" +
       (tags ? ("<div class=\"mt-2\"><i class=\"fa fa-tags fa-fw me-1\"></i>" + tags + "</div>") : "");
 
-    contentEl.innerHTML = escapeHtml(post.content || "");
+    contentEl.innerHTML = renderMarkdown(post.content || "");
 
     var comments = Array.isArray(post.comments) ? post.comments : [];
     if (!comments.length) {
@@ -296,12 +412,12 @@
     commentsEl.innerHTML = comments.map(function (comment) {
       var name = escapeHtml((comment.author && comment.author.username) || "匿名");
       var dateText = escapeHtml(formatDate(getDate(comment)));
-      var content = escapeHtml(comment.content || "");
+      var content = renderMarkdown(comment.content || "");
       return "" +
         "<div class=\"comment-item\">" +
         "  <div class=\"text-muted\"><i class=\"far fa-user fa-fw me-1\"></i>" + name +
         "  <span class=\"ms-2\"><i class=\"far fa-calendar fa-fw me-1\"></i>" + dateText + "</span></div>" +
-        "  <div class=\"comment-content\">" + content + "</div>" +
+        "  <div class=\"comment-content markdown-body\">" + content + "</div>" +
         "</div>";
     }).join("\n");
   }

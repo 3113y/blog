@@ -10,15 +10,24 @@
   <script src="/assets/js/dist/theme.min.js"></script>
   <style>
     .post-preview-text {
-      white-space: pre-wrap;
+      white-space: normal;
       line-height: 1.6;
       color: var(--text-muted-color);
       margin-bottom: 0.8rem;
+      max-height: 14rem;
+      overflow: hidden;
     }
 
     .error-tip {
       color: #d63939;
       margin-top: 1rem;
+    }
+
+    .markdown-body pre {
+      padding: 0.8rem;
+      background: rgba(127, 127, 127, 0.12);
+      border-radius: 0.4rem;
+      overflow: auto;
     }
   </style>
 </head>
@@ -60,6 +69,8 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="/blog-api.js"></script>
 </body>
 </html>
